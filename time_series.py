@@ -1,4 +1,4 @@
-from typing import List, Sequence, Tuple
+from typing import Dict, List, Sequence, Tuple
 import numpy as np
 import matplotlib.pyplot as plt # type: ignore
 
@@ -62,6 +62,7 @@ class TimeSeries:
 
         plt.show()
 
+
     def calculate_moving_average(self, m : int) -> np.ndarray:
         """Calculates the moving average of the time series
 
@@ -116,7 +117,7 @@ class TimeSeries:
         plt.show()
 
     def linear_regression(self, m : int, yintercept : bool, plot : bool = True)\
-         -> Tuple[List[float], List[float]]:
+         -> Dict[str, float]:
         """Fits moving average to a linear model
 
         Plots the regression vs the moving average and returns the beta and r
@@ -130,20 +131,28 @@ class TimeSeries:
         yintercept : bool
             Whether to calculate the regression with a y intercept or not. True
             if a y intercept should be included, false otherwise.
-        """
-        moving_average = self.calculate_moving_average(m)
 
-        i = 0
-        A = []
+        Returns
+        -------
+        Dict[str, float]
+            A dictionary containing the results of b0, b1, and the residuals
+        """
+        moving_average : np.ndarray = self.calculate_moving_average(m)
+
+        A : np.ndarray = moving_average[:, [0]]
         if yintercept:
-            while i < len(moving_average):
-                A.append([1, moving_average[i][0]])
-                i += 1
-        else:
-            while i < len(moving_average):
-                A.append([moving_average[i][0]])
-                i += 1
+            ones = np.ones((len(A), 1))
+            A = np.concatenate([ones, A], axis=1)
+
         beta, R, _, _ = np.linalg.lstsq(A, moving_average[:, 1], rcond=None)
+
+        results : dict = {"r": R[0]}
+        if yintercept:
+            results["b0"] = beta[0]
+            results["b1"] = beta[1]
+        else:
+            results["b0"] = 0
+            results["b1"] = beta[0]
 
         if plot:
             _, axes = plt.subplots()
@@ -151,17 +160,14 @@ class TimeSeries:
             axes.plot(moving_average[:, 0], moving_average[:, 1], linestyle="", \
                 marker=".", markersize=5, label="moving average")
 
-            if yintercept:
-                axes.plot(moving_average[:, 0], moving_average[:, 0] * beta[1] + \
-                    beta[0], label="regression line")
-            else:
-                axes.plot(moving_average[:, 0], moving_average[:, 0] * beta[0],\
-                    label="regression line")
+            axes.plot(moving_average[:, 0], moving_average[:, 0] * results["b1"] + \
+                results["b0"], label="regression line")
 
             axes.legend()
 
-        plt.show()
-        return (beta, R)
+            plt.show()
+
+        return results
 
     def predict_point_n(self, m : int, yintercept : bool, n : int) -> float:
         """Predicts a given point based in the time series give a linear
@@ -177,23 +183,18 @@ class TimeSeries:
             if a y intercept should be included, false otherwise.
         n : int
             The point to predict in the moving average
+
+        Returns
+        -------
+        float
+            The predicted value for a given point
         """
-        beta, _ = self.linear_regression(m, yintercept, False)
+        results = self.linear_regression(m, yintercept, False)
 
-        if yintercept:
-            return n * beta[1] + beta[0]
-
-        return n * beta[0]
+        return n * results["b1"] + results["b0"]
 
 
     """TODOS
-    So currently the predict point n uses an int for n and the linear
-    regression uses the year so that needs to be reconciled. It also
-    currently plots the linear regression again. There should be a separate
-    method for plotting the regression.
-
-    I don't like the set up for the yintercept boolean. Either do a separate
-    function for each or figure out a way to standardize the return.
 
     Can we cache the moving average and regressions so it doesn't repeat that
     function call a bunch of times? Maybe look at what you did in that homework.

@@ -61,6 +61,27 @@ class PredictionData:
         """
         self._data[:, self._map[key]] = value
 
+    def get_features(self, features : List[str]) -> np.ndarray:
+        """Gets multiple features at once
+
+        Returns each row with the selected features
+
+        Parameters
+        ----------
+        features : List[str]
+            A list of the features to include
+
+        Returns
+        -------
+        numpy.ndarray
+            A numpy array with all the rows in the data including each selected
+            feature.
+        """
+        idxs = []
+        for feature in features:
+            idxs.append(self._map[feature])
+
+        return self._data[:, idxs]
 
     def plot(self, target : str, feature : str) -> None:
         """Plot a target feature against another feature
@@ -73,7 +94,7 @@ class PredictionData:
             The column name of the feature to plot against
         """
         _, axes = plt.subplots()
-        axes.plot(self[feature], self[target], linestyle="", marker=".", \
+        axes.plot(self[feature], self[target], linestyle="", marker=".",\
             markersize=5)
         axes.set(title = "{} vs {}".format(target, feature),\
              ylabel=target, xlabel=feature)
@@ -119,12 +140,16 @@ class PredictionData:
             The column name of the feature to use in the model
         plot : bool, default=True
             Whether to plot the linear model or not
+
+        Returns
+        -------
+        Tuple[List[float], List[float]]
+            A tuple containing the beta values and r value
         """
-        i = 0
-        A = []
-        while i < len(self[target]):
-            A.append([1, self[feature][i]])
-            i += 1
+        x : np.ndarray = self.get_features([feature])
+        ones : np.ndarray = np.ones((len(x), 1))
+        A : np.ndarray =  np.concatenate([ones, x], axis=1)
+
         beta, R, _, _ = np.linalg.lstsq(A, self[target], rcond=None)
 
         if plot:
@@ -155,15 +180,16 @@ class PredictionData:
             The column name of the target feature
         feature : List[str]
             The column names of the feature to use in the model
+
+        Returns
+        -------
+        Tuple[List[float], List[float]]
+            A tuple containing the beta values and r value
         """
-        i = 0
-        A = []
-        while i < len(self[target]):
-            a = [1]
-            for feature in features:
-                a.append(self[feature][i])
-            A.append(a)
-            i += 1
+        x : np.ndarray = self.get_features(features)
+        ones : np.ndarray = np.ones((len(x), 1))
+        A : np.ndarray =  np.concatenate([ones, x], axis=1)
+
         beta, R, _, _ = np.linalg.lstsq(A, self[target], rcond=None)
 
         return (beta, R)
