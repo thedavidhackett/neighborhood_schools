@@ -1,4 +1,4 @@
-from typing import Dict, List, Sequence, Tuple
+from typing import List, Sequence, Tuple
 import numpy as np
 import matplotlib.pyplot as plt # type: ignore
 
@@ -115,7 +115,8 @@ class TimeSeries:
 
         plt.show()
 
-    def linear_regression(self, m : int, yintercept : bool) -> Tuple[List[float], List[float]]:
+    def linear_regression(self, m : int, yintercept : bool, plot : bool = True)\
+         -> Tuple[List[float], List[float]]:
         """Fits moving average to a linear model
 
         Plots the regression vs the moving average and returns the beta and r
@@ -144,19 +145,20 @@ class TimeSeries:
                 i += 1
         beta, R, _, _ = np.linalg.lstsq(A, moving_average[:, 1], rcond=None)
 
-        _, axes = plt.subplots()
+        if plot:
+            _, axes = plt.subplots()
 
-        axes.plot(moving_average[:, 0], moving_average[:, 1], linestyle="", \
-            marker=".", markersize=5, label="moving average")
+            axes.plot(moving_average[:, 0], moving_average[:, 1], linestyle="", \
+                marker=".", markersize=5, label="moving average")
 
-        if yintercept:
-            axes.plot(moving_average[:, 0], moving_average[:, 0] * beta[1] + \
-                beta[0], label="regression line")
-        else:
-            axes.plot(moving_average[:, 0], moving_average[:, 0] * beta[0],\
-                 label="regression line")
+            if yintercept:
+                axes.plot(moving_average[:, 0], moving_average[:, 0] * beta[1] + \
+                    beta[0], label="regression line")
+            else:
+                axes.plot(moving_average[:, 0], moving_average[:, 0] * beta[0],\
+                    label="regression line")
 
-        axes.legend()
+            axes.legend()
 
         plt.show()
         return (beta, R)
@@ -176,7 +178,7 @@ class TimeSeries:
         n : int
             The point to predict in the moving average
         """
-        beta, R = self.linear_regression(m, yintercept)
+        beta, _ = self.linear_regression(m, yintercept, False)
 
         if yintercept:
             return n * beta[1] + beta[0]
@@ -184,15 +186,15 @@ class TimeSeries:
         return n * beta[0]
 
 
-        """TODOS
-        So currently the predict point n uses an int for n and the linear
-        regression uses the year so that needs to be reconciled. It also
-        currently plots the linear regression again. There should be a separate
-        method for plotting the regression.
+    """TODOS
+    So currently the predict point n uses an int for n and the linear
+    regression uses the year so that needs to be reconciled. It also
+    currently plots the linear regression again. There should be a separate
+    method for plotting the regression.
 
-        I don't like the set up for the yintercept boolean. Either do a separate
-        function for each or figure out a way to standardize the return.
+    I don't like the set up for the yintercept boolean. Either do a separate
+    function for each or figure out a way to standardize the return.
 
-        Can we cache the moving average and regressions so it doesn't repeat that
-        function call a bunch of times? Maybe look at what you did in that homework.
-        """
+    Can we cache the moving average and regressions so it doesn't repeat that
+    function call a bunch of times? Maybe look at what you did in that homework.
+    """
