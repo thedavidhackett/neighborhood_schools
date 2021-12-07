@@ -1,4 +1,4 @@
-from typing import Dict, List, Sequence, Tuple
+from typing import Dict, List, Sequence
 import numpy as np
 import matplotlib.pyplot as plt # type: ignore
 
@@ -192,10 +192,3 @@ class TimeSeries:
         results = self.linear_regression(m, yintercept, False)
 
         return n * results["b1"] + results["b0"]
-
-
-    """TODOS
-
-    Can we cache the moving average and regressions so it doesn't repeat that
-    function call a bunch of times? Maybe look at what you did in that homework.
-    """
